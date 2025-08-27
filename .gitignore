@@ -1,0 +1,15 @@
+# ログファイルを無視
+/php/logs/
+
+# アップロードされたファイルを無視
+/php/uploads/
+
+# Composerのライブラリを無視
+/php/vendor/
+
+# セットアップ用のロックファイルを無視
+/php/docs
+
+/php/src
+
+/php/simulation_files

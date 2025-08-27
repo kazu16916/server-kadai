@@ -1,0 +1,56 @@
+services:
+  web:
+    build:
+      context: ./php
+    ports:
+      # 【変更】PC側のポートを80番から8088番に変更
+      - "8088:80"
+    volumes:
+      # この行が、phpディレクトリをコンテナ内に正しく配置する設定です
+      - ./php:/var/www/html
+    dns:
+      - 8.8.8.8
+    depends_on:
+      db:
+        condition: service_healthy
+      websocket:
+        condition: service_started
+
+  db:
+    image: mysql:8.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: voting_app
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+
+  websocket:
+    build:
+      context: ./php
+    command: >
+      sh -c "
+        composer install &&
+        php websocket_server.php
+      "
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./php:/var/www/html
+    dns:
+      - 8.8.8.8
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
