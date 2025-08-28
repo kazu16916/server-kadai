@@ -1,7 +1,4 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 $forceHamburger = !empty($_SESSION['force_hamburger']);
 $mobileMenuLgClass = $forceHamburger ? '' : 'lg:hidden';
 ?>
