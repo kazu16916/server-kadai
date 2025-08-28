@@ -15,6 +15,7 @@ $mobileMenuLgClass = $forceHamburger ? '' : 'lg:hidden';
         <!-- Desktop: primary links -->
         <div class="<?php echo $forceHamburger ? 'hidden' : 'hidden lg:flex'; ?> items-center gap-4">
           <a href="view_doc.php?page=usage.txt" class="text-gray-600 hover:text-blue-600">ヘルプ</a>
+          <a href="driveby_landing.php" class="text-gray-600 hover:text-blue-600">提供プログラム</a>
           <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
             <a href="diag.php" class="text-blue-600 hover:text-blue-800 font-semibold">ユーザー活動ログ検索</a>
             <a href="simulation_tools.php" class="text-green-600 hover:text-green-800 font-semibold">攻撃シミュレーション</a>
