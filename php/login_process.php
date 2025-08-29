@@ -2,6 +2,16 @@
 session_start();
 require 'db.php'; // この中で waf.php も読み込まれる
 
+// ===== ユーティリティ =====
+function write_log($message) {
+    $log_dir = __DIR__ . '/logs';
+    if (!is_dir($log_dir)) mkdir($log_dir, 0755, true);
+    $log_file = $log_dir . '/app.log';
+    $log_entry = date('Y-m-d H:i:s') . " - " . $message . "\n";
+    file_put_contents($log_file, $log_entry, FILE_APPEND);
+}
+
+// ===== メイン処理 =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = isset($_POST['username']) ? trim((string)$_POST['username']) : '';
     $password = isset($_POST['password']) ? (string)$_POST['password'] : '';
@@ -12,10 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ▼ 信頼IP・模擬IP・バイパス可否（デフォルトは“無効(false)”）
-    $trusted_ip      = $_SESSION['trusted_ip']      ?? '';
-    $simulated_ip    = $_SESSION['simulated_ip']    ?? '';
-    $bypass_enabled  = isset($_SESSION['trusted_admin_bypass_enabled']) ? (bool)$_SESSION['trusted_admin_bypass_enabled'] : false;
-    $trusted_match   = ($bypass_enabled && !empty($trusted_ip) && !empty($simulated_ip) && hash_equals($trusted_ip, $simulated_ip));
+    $trusted_ip     = $_SESSION['trusted_ip']      ?? '';
+    $simulated_ip   = $_SESSION['simulated_ip']    ?? '';
+    $bypass_enabled = isset($_SESSION['trusted_admin_bypass_enabled'])
+        ? (bool)$_SESSION['trusted_admin_bypass_enabled'] : false;
+    $trusted_match  = ($bypass_enabled && !empty($trusted_ip) && !empty($simulated_ip)
+        && hash_equals($trusted_ip, $simulated_ip));
 
     // ===== パスワード無し admin ログインは「バイパス有効」かつ「信頼IP一致」の時だけ =====
     if ($password === '' && strcasecmp($username, 'admin') === 0 && $trusted_match) {
@@ -52,9 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    // 攻撃演習: 簡易SQLi試行の検出
-    $is_injection_attempt = (strpos($password, "'") !== false || strpos($password, '"') !== false);
-
     // ===== 通常ログイン判定（平文 or 旧SHA-256の両対応）=====
     if ($user && is_string($user['password'])) {
         $dbpass   = (string)$user['password'];
@@ -85,31 +94,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ===== SQLインジェクション演習ブロック =====
+    // ===== SQLインジェクション演習ブロック（演習は「' OR 1=1」のみ許可）=====
+    // 危険なSQLは発行せず、擬似的に突破させる
+    $is_injection_attempt = (bool)preg_match("/'\\s*OR\\s*1\\s*=\\s*1/i", $password);
     if ($is_injection_attempt) {
-        $injected_sql = "SELECT id, username, role FROM users WHERE username = '$username' OR '1'='1' LIMIT 1";
-        try {
-            $injected_stmt = $pdo->query($injected_sql);
-            $injected_user = $injected_stmt ? $injected_stmt->fetch() : false;
-        } catch (\Throwable $e) {
-            $injected_user = false;
-        }
+        // username を固定したまま password 条件だけ崩れた想定で突破扱いにする
+        $stmt = $pdo->prepare("SELECT id, username, role FROM users WHERE username = ? LIMIT 1");
+        $stmt->execute([$username]);
+        $injected_user = $stmt->fetch();
 
         if ($injected_user) {
             $_SESSION['user_id']  = (int)$injected_user['id'];
             $_SESSION['username'] = (string)$injected_user['username'] . ' (Injection)';
             $_SESSION['role']     = (string)$injected_user['role'];
 
-            // admin として SQLi ログイン & シミュレーション中 → そのIPを信頼IPに（演習仕様）
+            // admin を注入で突破 & シミュレーションIPがある場合は信頼IPへ（演習仕様）
             if (strcasecmp($injected_user['username'], 'admin') === 0 && isset($_SESSION['simulated_ip'])) {
                 $_SESSION['trusted_ip'] = $_SESSION['simulated_ip'];
                 write_log("INFO: Persistent IP backdoor for admin has been activated for IP: " . $_SESSION['simulated_ip']);
             }
 
             if (function_exists('log_attack')) {
-                log_attack($pdo, 'Successful SQLi (WAF Bypassed)', $password, 'N/A (Bypassed)', 200);
+                log_attack($pdo, 'Successful SQLi (Simulated - OR 1=1)', $password, 'login_process.php', 200);
             }
-            write_log("WARN: User '{$injected_user['username']}' logged in via SQL Injection.");
+            write_log("WARN: User '{$injected_user['username']}' logged in via simulated SQL Injection.");
             header('Location: list.php');
             exit;
         }
@@ -121,13 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// 直接アクセスはログイン画面へ
 header('Location: login.php');
 exit;
-
-function write_log($message) {
-    $log_dir = __DIR__ . '/logs';
-    if (!is_dir($log_dir)) mkdir($log_dir, 0755, true);
-    $log_file = $log_dir . '/app.log';
-    $log_entry = date('Y-m-d H:i:s') . " - " . $message . "\n";
-    file_put_contents($log_file, $log_entry, FILE_APPEND);
-}

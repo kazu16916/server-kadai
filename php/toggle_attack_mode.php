@@ -15,7 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['attack_type'])) {
         'keylogger_enabled',
         'trusted_admin_bypass_enabled',
         'ransomware_enabled',
-        'tamper_enabled'
+        'tamper_enabled',
+        'reverse_bruteforce_enabled',
+        'joe_account_attack_enabled'
     ];
 
     if ($attack_type === 'all_enable') {

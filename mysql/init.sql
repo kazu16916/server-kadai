@@ -126,6 +126,80 @@ CREATE TABLE IF NOT EXISTS ransom_payments (
   FOREIGN KEY (payer_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 逆ブルートフォース攻撃ログ用テーブル
+CREATE TABLE IF NOT EXISTS reverse_bruteforce_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    target_password VARCHAR(255) NOT NULL,
+    attempted_username VARCHAR(255) NOT NULL,
+    success BOOLEAN NOT NULL DEFAULT FALSE,
+    attempt_order INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_session_id (session_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 一般的なユーザー名の辞書データ（演習用）
+CREATE TABLE IF NOT EXISTS username_dictionary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    frequency_rank INT NOT NULL DEFAULT 0,
+    description VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ジョーアカウント攻撃ログ
+CREATE TABLE IF NOT EXISTS joe_account_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(64) NOT NULL,
+    attempted_username VARCHAR(255) NOT NULL,
+    tried_password VARCHAR(255) NOT NULL,      -- マスク済みで保存
+    success BOOLEAN NOT NULL DEFAULT FALSE,
+    attempt_order INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_session_id (session_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+-- 一般的なユーザー名を事前登録
+INSERT IGNORE INTO username_dictionary (username, frequency_rank, description) VALUES
+('admin', 1, '管理者アカウント'),
+('administrator', 2, '管理者アカウント（フル名）'),
+('root', 3, 'システム管理者'),
+('user', 4, '一般ユーザー'),
+('test', 5, 'テストアカウント'),
+('guest', 6, 'ゲストアカウント'),
+('demo', 7, 'デモアカウント'),
+('support', 8, 'サポートアカウント'),
+('service', 9, 'サービスアカウント'),
+('operator', 10, 'オペレーター'),
+('manager', 11, 'マネージャー'),
+('supervisor', 12, 'スーパーバイザー'),
+('webmaster', 13, 'ウェブマスター'),
+('info', 14, '情報アカウント'),
+('mail', 15, 'メールアカウント'),
+('ftp', 16, 'FTPアカウント'),
+('www', 17, 'WWWアカウント'),
+('web', 18, 'ウェブアカウント'),
+('anonymous', 19, '匿名アカウント'),
+('public', 20, 'パブリックアカウント'),
+('sales', 21, '営業アカウント'),
+('marketing', 22, 'マーケティングアカウント'),
+('finance', 23, '財務アカウント'),
+('hr', 24, '人事アカウント'),
+('it', 25, 'ITアカウント'),
+('dev', 26, '開発者アカウント'),
+('developer', 27, '開発者アカウント（フル名）'),
+('api', 28, 'APIアカウント'),
+('backup', 29, 'バックアップアカウント'),
+('monitor', 30, '監視アカウント'),
+('joe', 31, '通例のダミー/既定ユーザー'),
+('joeuser', 32, 'Joe ユーザー'),
+('jdoe', 33, 'John Doe 短縮'),
+('john', 34, '一般的既定名'),
+('john.doe', 35, '一般的既定名（ドット）');
+
 -- デフォルトの検知ルール (is_custom = FALSE)
 INSERT INTO `waf_blacklist` (`pattern`, `description`, `is_custom`) VALUES
 -- SQL Injection - Basic Patterns

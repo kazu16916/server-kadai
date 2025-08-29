@@ -8,12 +8,14 @@ if (!isset($_SESSION['role'])  && $current !== 'logout.php') {
 }
 
 // 各攻撃演習モードの状態を取得
-$dictionary_attack_enabled = $_SESSION['dictionary_attack_enabled'] ?? false;
-$bruteforce_enabled = $_SESSION['bruteforce_enabled'] ?? false;
+$dictionary_attack_enabled      = $_SESSION['dictionary_attack_enabled']      ?? false;
+$bruteforce_enabled             = $_SESSION['bruteforce_enabled']             ?? false;
 $trusted_admin_bypass_enabled   = $_SESSION['trusted_admin_bypass_enabled']   ?? false;
-$keylogger_enabled = $_SESSION['keylogger_enabled'] ?? false;
-$ransomware_enabled = $_SESSION['ransomware_enabled'] ?? false;
-$tamper_enabled = $_SESSION['tamper_enabled'] ?? false;
+$keylogger_enabled              = $_SESSION['keylogger_enabled']              ?? false;
+$ransomware_enabled             = $_SESSION['ransomware_enabled']             ?? false;
+$tamper_enabled                 = $_SESSION['tamper_enabled']                 ?? false;
+$reverse_bruteforce_enabled     = $_SESSION['reverse_bruteforce_enabled']     ?? false;
+$joe_account_attack_enabled     = $_SESSION['joe_account_attack_enabled']     ?? false; // ★ 追加
 
 // サンプルの攻撃者プロファイル
 $attackers = [
@@ -60,7 +62,10 @@ $attackers = [
             <?php endforeach; ?>
         </div>
         <div class="mt-6 text-center">
-            <form action="set_simulation_ip.php" method="POST"><input type="hidden" name="stop" value="true"><button type="submit" class="text-gray-600 hover:underline">IPシミュレーションを停止</button></form>
+            <form action="set_simulation_ip.php" method="POST">
+                <input type="hidden" name="stop" value="true">
+                <button type="submit" class="text-gray-600 hover:underline">IPシミュレーションを停止</button>
+            </form>
         </div>
     </div>
 
@@ -68,9 +73,16 @@ $attackers = [
     <div class="bg-white p-8 rounded-lg shadow-md">
         <h2 class="text-2xl font-bold text-center mb-6">高度な攻撃演習の有効化</h2>
         <div class="mb-6 text-center">
-            <form action="toggle_attack_mode.php" method="POST" class="inline-block"><input type="hidden" name="attack_type" value="all_enable"><button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700">全て有効化</button></form>
-            <form action="toggle_attack_mode.php" method="POST" class="inline-block"><input type="hidden" name="attack_type" value="all_disable"><button type="submit" class="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700">全て無効化</button></form>
+            <form action="toggle_attack_mode.php" method="POST" class="inline-block">
+                <input type="hidden" name="attack_type" value="all_enable">
+                <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700">全て有効化</button>
+            </form>
+            <form action="toggle_attack_mode.php" method="POST" class="inline-block">
+                <input type="hidden" name="attack_type" value="all_disable">
+                <button type="submit" class="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700">全て無効化</button>
+            </form>
         </div>
+
         <div class="space-y-4 border-t pt-6">
             <!-- 辞書攻撃 -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
@@ -80,9 +92,12 @@ $attackers = [
                 </div>
                 <form action="toggle_attack_mode.php" method="POST">
                     <input type="hidden" name="attack_type" value="dictionary_attack">
-                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $dictionary_attack_enabled ? 'bg-gray-500 text-white' : 'bg-red-500 text-white' ?>"><?= $dictionary_attack_enabled ? '無効化' : '有効化' ?></button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $dictionary_attack_enabled ? 'bg-gray-500 text-white' : 'bg-red-500 text-white' ?>">
+                        <?= $dictionary_attack_enabled ? '無効化' : '有効化' ?>
+                    </button>
                 </form>
             </div>
+
             <!-- 総当たり攻撃 -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
                 <div>
@@ -91,9 +106,47 @@ $attackers = [
                 </div>
                 <form action="toggle_attack_mode.php" method="POST">
                     <input type="hidden" name="attack_type" value="bruteforce">
-                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $bruteforce_enabled ? 'bg-gray-500 text-white' : 'bg-red-500 text-white' ?>"><?= $bruteforce_enabled ? '無効化' : '有効化' ?></button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $bruteforce_enabled ? 'bg-gray-500 text-white' : 'bg-red-500 text-white' ?>">
+                        <?= $bruteforce_enabled ? '無効化' : '有効化' ?>
+                    </button>
                 </form>
             </div>
+
+            <!-- 逆ブルートフォース攻撃 -->
+            <div class="flex justify-between items-center p-4 border rounded-lg">
+                <div>
+                    <h3 class="font-semibold text-lg">逆総当たり攻撃</h3>
+                    <p class="text-sm text-gray-600">
+                        1つのパスワードに対して複数のユーザー名を試行する攻撃手法の演習です。
+                        一般的なユーザー名辞書を使用してアカウント発見を試みます。
+                    </p>
+                </div>
+                <form action="toggle_attack_mode.php" method="POST">
+                    <input type="hidden" name="attack_type" value="reverse_bruteforce">
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $reverse_bruteforce_enabled ? 'bg-gray-500 text-white' : 'bg-red-600 text-white' ?>">
+                        <?= $reverse_bruteforce_enabled ? '無効化' : '有効化' ?>
+                    </button>
+                </form>
+            </div>
+
+            <!-- ★ ジョーアカウント攻撃（スプレー） -->
+            <div class="flex justify-between items-center p-4 border rounded-lg">
+                <div>
+                    <h3 class="font-semibold text-lg">ジョーアカウント攻撃（スプレー）</h3>
+                    <p class="text-sm text-gray-600">
+                        既定名（joe/jdoe/john 等）や指定パターンのユーザーに対して、よくあるパスワードを薄く広く試行する演習です。
+                        ログインページに専用UIを表示します。
+                    </p>
+                </div>
+                <form action="toggle_attack_mode.php" method="POST">
+                    <input type="hidden" name="attack_type" value="joe_account_attack">
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $joe_account_attack_enabled ? 'bg-gray-500 text-white' : 'bg-red-600 text-white' ?>">
+                        <?= $joe_account_attack_enabled ? '無効化' : '有効化' ?>
+                    </button>
+                </form>
+            </div>
+
+            <!-- バックドア -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
                 <div>
                     <h3 class="font-semibold text-lg">バックドア</h3>
@@ -109,6 +162,8 @@ $attackers = [
                     </button>
                 </form>
             </div>
+
+            <!-- キーロガー -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
                 <div>
                     <h3 class="font-semibold text-lg">キーロガー（演習）</h3>
@@ -124,7 +179,8 @@ $attackers = [
                     </button>
                 </form>
             </div>
-            <!-- ランサムウェア演習（新規追加） -->
+
+            <!-- ランサムウェア演習 -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
                 <div>
                     <h3 class="font-semibold text-lg">ランサムウェア演習</h3>
@@ -140,22 +196,24 @@ $attackers = [
                     </button>
                 </form>
             </div>
+
+            <!-- 改ざん攻撃 -->
             <div class="flex justify-between items-center p-4 border rounded-lg">
-            <div>
-                <h3 class="font-semibold text-lg">改ざん攻撃（演習）</h3>
-                <p class="text-sm text-gray-600">
-                有効の場合、<code>simulation_files</code> 内の模擬ファイル改ざんと、
-                防御側のハッシュ検証画面（ベースライン作成/更新・検証）を利用できます。
-                </p>
+                <div>
+                    <h3 class="font-semibold text-lg">改ざん攻撃（演習）</h3>
+                    <p class="text-sm text-gray-600">
+                        有効の場合、<code>simulation_files</code> 内の模擬ファイル改ざんと、
+                        防御側のハッシュ検証画面（ベースライン作成/更新・検証）を利用できます。
+                    </p>
+                </div>
+                <form action="toggle_attack_mode.php" method="POST">
+                    <input type="hidden" name="attack_type" value="tamper">
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold <?= $tamper_enabled ? 'bg-gray-500 text-white' : 'bg-red-600 text-white' ?>">
+                        <?= $tamper_enabled ? '無効化' : '有効化' ?>
+                    </button>
+                </form>
             </div>
-            <form action="toggle_attack_mode.php" method="POST">
-                <input type="hidden" name="attack_type" value="tamper">
-                <button type="submit"
-                class="px-4 py-2 rounded-lg text-sm font-semibold <?= $tamper_enabled ? 'bg-gray-500 text-white' : 'bg-red-600 text-white' ?>">
-                <?= $tamper_enabled ? '無効化' : '有効化' ?>
-                </button>
-            </form>
-            </div>
+
         </div>
     </div>
 </div>
