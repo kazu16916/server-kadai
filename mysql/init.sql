@@ -160,6 +160,16 @@ CREATE TABLE IF NOT EXISTS joe_account_logs (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- schema_cli_events.sql
+CREATE TABLE IF NOT EXISTS cli_events (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  event_type VARCHAR(64) NOT NULL,
+  meta       TEXT,
+  ip         VARCHAR(45) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_cli_events_created ON cli_events(created_at);
 
 
 -- 一般的なユーザー名を事前登録
